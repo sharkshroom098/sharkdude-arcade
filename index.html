@@ -7,15 +7,15 @@
   <style>
     @import url('https://googleapis.com');
 
-    /* Retro arcade deep space background with subtle neon grid effect */
-    body {
+    /* STRICT RETRO ARCADE OVERRIDE - Pitch black background with an embedded subtle glowing grid */
+    html, body {
+      background-color: #05000a !important;
+      background-image: 
+        linear-gradient(rgba(255, 0, 127, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 0, 127, 0.04) 1px, transparent 1px) !important;
+      background-size: 25px 25px !important;
       margin: 0;
       padding: 0;
-      background-color: #05000a;
-      background-image: 
-        linear-gradient(rgba(57, 255, 20, 0.05) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(57, 255, 20, 0.05) 1px, transparent 1px);
-      background-size: 20px 20px;
       font-family: 'Press Start 2P', 'Courier Prime', monospace;
       display: flex;
       justify-content: center;
@@ -24,7 +24,7 @@
       color: #39ff14;
     }
 
-    /* Strict 2-column structure with an updated retro gap */
+    /* 2-Column Cabinet Grid */
     .dashboard-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -35,7 +35,7 @@
       box-sizing: border-box;
     }
 
-    /* Base arcade card setup */
+    /* Sharp-cornered arcade game slots */
     .game-card {
       text-decoration: none;
       display: flex;
@@ -50,59 +50,58 @@
       box-sizing: border-box;
       position: relative;
       overflow: hidden;
-      transition: transform 0.15s steps(4), box-shadow 0.15s steps(4);
+      transition: transform 0.1s steps(3), box-shadow 0.1s steps(3);
     }
 
-    /* VIBRANT 80S ARCADE COLORS: Handled via CSS gradients so they show up instantly */
+    /* VIBRANT SYNTHWAVE / ARCADE THEME COLOR ASSIGNMENTS */
     .game-card:nth-child(1) { 
-      background-color: #e51b24;
-      background-image: linear-gradient(135deg, #7a0010, #e51b24), url('adventure.png');
-      border: 3px solid #e51b24; 
-      box-shadow: 0 0 12px #e51b24; 
+      background-color: #12001a;
+      background-image: linear-gradient(135deg, #4d0000, #12001a), url('adventure.png');
+      border: 3px solid #ff003c; 
+      box-shadow: 0 0 10px #ff003c; 
     }
     .game-card:nth-child(2) { 
-      background-color: #0088cc;
-      background-image: linear-gradient(135deg, #003366, #0088cc), url('fighter-pilot.png');
-      border: 3px solid #0088cc; 
-      box-shadow: 0 0 12px #0088cc; 
+      background-color: #12001a;
+      background-image: linear-gradient(135deg, #002244, #12001a), url('fighter-pilot.png');
+      border: 3px solid #00ffff; 
+      box-shadow: 0 0 10px #00ffff; 
     }
     .game-card:nth-child(3) { 
-      background-color: #00ffcc;
-      background-image: linear-gradient(135deg, #005f4b, #00ffcc), url('neon-snake.png');
-      border: 3px solid #00ffcc; 
-      box-shadow: 0 0 12px #00ffcc; 
+      background-color: #12001a;
+      background-image: linear-gradient(135deg, #004422, #12001a), url('neon-snake.png');
+      border: 3px solid #39ff14; 
+      box-shadow: 0 0 10px #39ff14; 
     }
     .game-card:nth-child(4) { 
-      background-color: #ffaa00;
-      background-image: linear-gradient(135deg, #664400, #ffaa00), url('2048.png');
+      background-color: #12001a;
+      background-image: linear-gradient(135deg, #443300, #12001a), url('2048.png');
       border: 3px solid #ffaa00; 
-      box-shadow: 0 0 12px #ffaa00; 
+      box-shadow: 0 0 10px #ffaa00; 
     }
     .game-card:nth-child(5) { 
-      background-color: #ff007f;
-      background-image: linear-gradient(135deg, #660033, #ff007f), url('asteroid-evader.png');
+      background-color: #12001a;
+      background-image: linear-gradient(135deg, #440033, #12001a), url('asteroid-evader.png');
       border: 3px solid #ff007f; 
-      box-shadow: 0 0 12px #ff007f; 
+      box-shadow: 0 0 10px #ff007f; 
     }
 
-    /* Hover updates for the glow response */
+    /* Snappy 8-bit frame jump response on hover */
     .game-card:hover { transform: scale(1.03); }
-    .game-card:nth-child(1):hover { box-shadow: 0 0 25px #e51b24; }
-    .game-card:nth-child(2):hover { box-shadow: 0 0 25px #0088cc; }
-    .game-card:nth-child(3):hover { box-shadow: 0 0 25px #00ffcc; }
-    .game-card:nth-child(4):hover { box-shadow: 0 0 25px #ffaa00; }
-    .game-card:nth-child(5):hover { box-shadow: 0 0 25px #ff007f; }
+    .game-card:nth-child(1):hover { box-shadow: 0 0 22px #ff003c; }
+    .game-card:nth-child(2):hover { box-shadow: 0 0 22px #00ffff; }
+    .game-card:nth-child(3):hover { box-shadow: 0 0 22px #39ff14; }
+    .game-card:nth-child(4):hover { box-shadow: 0 0 22px #ffaa00; }
+    .game-card:nth-child(5):hover { box-shadow: 0 0 22px #ff007f; }
 
-    /* Dark dimming layer to mix images nicely with background colors and text */
+    /* Dim overlay so text remains intensely readable */
     .game-card::before {
       content: '';
       position: absolute;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.55);
+      background: rgba(0, 0, 0, 0.7);
       z-index: 1;
     }
 
-    /* Floating content layer */
     .card-content {
       position: relative;
       z-index: 2;
@@ -115,54 +114,68 @@
       height: 100%;
     }
 
-    /* Pixel headlines with shadows */
+    /* High-contrast cybernetic white headings with pitch-black under-shadow blocks */
     .game-title {
       color: #ffffff;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: bold;
       text-transform: uppercase;
-      text-shadow: 3px 3px 0px #000;
+      text-shadow: 2px 2px 0px #000;
       margin: 0;
+      letter-spacing: -1px;
     }
 
-    /* Coin-op button badges */
+    /* RECONSTRUCTED: Backlit Arcade Cabinet Style Buttons in Neon Pink */
     .game-btn {
       margin-top: 14px;
-      color: white;
-      padding: 6px 10px;
-      border-radius: 2px;
+      color: #ffffff;
+      background-color: #240012;
+      border: 2px solid #ff007f;
+      border-radius: 4px;
+      padding: 6px 12px;
       font-weight: bold;
       font-size: 8px;
       text-transform: uppercase;
-      box-shadow: 2px 2px 0px #000;
-      border: 1px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 0 0 8px #ff007f, inset 0 0 4px #ff007f;
+      text-shadow: 0 0 3px #ffffff;
+      letter-spacing: 0px;
+      transition: background-color 0.1s, box-shadow 0.1s;
+    }
+    
+    /* Extra flash glow on card hover */
+    .game-card:hover .game-btn {
+      background-color: #ff007f;
+      color: #000000;
+      box-shadow: 0 0 15px #ff007f;
+      text-shadow: none;
     }
 
-    /* 6th box styled as a blinking arcade coin slot placeholder */
+    /* Coin Door Blinking Slot Element Box */
     .placeholder-card {
-      border: 3px dashed #39ff14;
+      border: 3px dashed #ff007f;
       border-radius: 4px;
       aspect-ratio: 3/2;
       display: flex;
       justify-content: center;
       align-items: center;
-      color: #39ff14;
+      color: #ff007f;
       font-weight: bold;
-      font-size: 10px;
+      font-size: 9px;
       text-transform: uppercase;
-      background-color: #120024;
-      box-shadow: 0 0 10px rgba(57, 255, 20, 0.2);
-      animation: blink 1.5s infinite steps(2);
+      background-color: #0d0014;
+      text-shadow: 0 0 5px #ff007f;
+      box-shadow: inset 0 0 10px rgba(255, 0, 127, 0.2);
+      animation: coinBlink 2s infinite steps(2);
     }
 
-    @keyframes blink {
+    @keyframes coinBlink {
       0% { opacity: 1; }
-      50% { opacity: 0.4; }
+      50% { opacity: 0.3; }
     }
 
     @media (max-width: 500px) {
-      .dashboard-grid { grid-template-columns: 1fr; gap: 16px; }
-      .game-title { font-size: 12px; }
+      .dashboard-grid { grid-template-columns: 1fr; gap: 20px; }
+      .game-title { font-size: 11px; }
       .game-btn { font-size: 7px; }
     }
   </style>
@@ -171,47 +184,47 @@
 
   <div class="dashboard-grid">
 
-    <!-- 1. Adventure Card Element (Red Theme) -->
+    <!-- 1. Adventure Card Element -->
     <a href="adventure.png" target="_blank" class="game-card">
       <div class="card-content">
         <h2 class="game-title">Adventure</h2>
-        <div class="game-btn" style="background-color: #e51b24;">Atari 2600</div>
+        <div class="game-btn">Atari 2600</div>
       </div>
     </a>
 
-    <!-- 2. Fighter Pilot Card Element (Blue Theme) -->
+    <!-- 2. Fighter Pilot Card Element -->
     <a href="fighter-pilot.png" target="_blank" class="game-card">
       <div class="card-content">
         <h2 class="game-title">Fighter Pilot</h2>
-        <div class="game-btn" style="background-color: #0088cc;">Insert Coin</div>
+        <div class="game-btn">Fighter Pilot</div>
       </div>
     </a>
 
-    <!-- 3. Neon Snake Card Element (Cyan Theme) -->
+    <!-- 3. Neon Snake Card Element -->
     <a href="neon-snake.png" target="_blank" class="game-card">
       <div class="card-content">
         <h2 class="game-title">Neon Snake</h2>
-        <div class="game-btn" style="background-color: #00ffcc; color: #1a1a1a;">Play Solo</div>
+        <div class="game-btn">Neon Snake</div>
       </div>
     </a>
 
-    <!-- 4. 2048 Card Element (Gold Theme) -->
+    <!-- 4. 2048 Card Element -->
     <a href="2048.png" target="_blank" class="game-card">
       <div class="card-content">
         <h2 class="game-title">2048</h2>
-        <div class="game-btn" style="background-color: #ffaa00; color: #000;">Hi-Score</div>
+        <div class="game-btn">2048</div>
       </div>
     </a>
 
-    <!-- 5. Asteroid Evader Card Element (Pink Theme) -->
+    <!-- 5. Asteroid Evader Card Element -->
     <a href="asteroid-evader.png" target="_blank" class="game-card">
       <div class="card-content">
         <h2 class="game-title">Asteroid Evader</h2>
-        <div class="game-btn" style="background-color: #ff007f;">Game Start</div>
+        <div class="game-btn">Asteroid Evader</div>
       </div>
     </a>
 
-    <!-- 6. Sixth Blinking Placeholder Card -->
+    <!-- 6. Placeholder Card Layout Entry Box -->
     <div class="placeholder-card">
       Insert Coin
     </div>
