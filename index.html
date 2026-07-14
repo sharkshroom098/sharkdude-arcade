@@ -5,56 +5,74 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Retro Games Dashboard</title>
   <style>
-    /* Resetting default body parameters for your GitHub page layout */
+    @import url('https://googleapis.com');
+
+    /* Retro arcade deep space background with subtle neon grid effect */
     body {
       margin: 0;
       padding: 0;
-      background-color: #f4f7f9;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #05000a;
+      background-image: 
+        linear-gradient(rgba(18, 0, 36, 0.4) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(18, 0, 36, 0.4) 1px, transparent 1px);
+      background-size: 20px 20px;
+      font-family: 'Press Start 2P', 'Courier Prime', monospace;
       display: flex;
       justify-content: center;
       align-items: center;
       min-height: 100vh;
+      color: #39ff14;
     }
 
-    /* Main layout container keeping a strict 2-column structure matching your image */
+    /* Strict 2-column structure with an updated retro gap */
     .dashboard-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 20px;
+      gap: 24px;
       width: 100%;
-      max-width: 600px;
-      padding: 20px;
+      max-width: 640px;
+      padding: 24px;
       box-sizing: border-box;
     }
 
-    /* Base styling for each custom game rectangle card element */
+    /* Sharp corners and heavy neon box shadows to mimic illuminated arcade cabinets */
     .game-card {
       text-decoration: none;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      border-radius: 24px;
+      border-radius: 4px;
       aspect-ratio: 3/2;
       background-size: cover;
       background-position: center;
-      padding: 15px;
+      padding: 12px;
       box-sizing: border-box;
-      border: 1px solid rgba(0, 0, 0, 0.1);
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+      border: 3px solid #ff007f;
+      box-shadow: 0 0 12px #ff007f, inset 0 0 10px #ff007f;
       position: relative;
       overflow: hidden;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      transition: transform 0.15s steps(4), box-shadow 0.15s steps(4);
     }
 
-    /* Smooth scale animation effect when user hovers mouse over a card */
+    /* Distinct glowing borders based on the game's theme */
+    .game-card:nth-child(1) { border-color: #e51b24; box-shadow: 0 0 12px #e51b24; }
+    .game-card:nth-child(2) { border-color: #0088cc; box-shadow: 0 0 12px #0088cc; }
+    .game-card:nth-child(3) { border-color: #00ffcc; box-shadow: 0 0 12px #00ffcc; }
+    .game-card:nth-child(4) { border-color: #ffaa00; box-shadow: 0 0 12px #ffaa00; }
+    .game-card:nth-child(5) { border-color: #ff007f; box-shadow: 0 0 12px #ff007f; }
+
+    /* Snappy retro jump up animation on hover */
     .game-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+      transform: scale(1.03);
     }
+    .game-card:nth-child(1):hover { box-shadow: 0 0 25px #e51b24; }
+    .game-card:nth-child(2):hover { box-shadow: 0 0 25px #0088cc; }
+    .game-card:nth-child(3):hover { box-shadow: 0 0 25px #00ffcc; }
+    .game-card:nth-child(4):hover { box-shadow: 0 0 25px #ffaa00; }
+    .game-card:nth-child(5):hover { box-shadow: 0 0 25px #ff007f; }
 
-    /* Dark dimming veil ensuring text readability over custom bright game visuals */
+    /* Dark dimming layer to keep pixel fonts readable */
     .game-card::before {
       content: '';
       position: absolute;
@@ -62,11 +80,11 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(0, 0, 0, 0.45);
+      background: rgba(0, 0, 0, 0.65);
       z-index: 1;
     }
 
-    /* Making sure content floats above the dark layer background element */
+    /* Floating game content container */
     .card-content {
       position: relative;
       z-index: 2;
@@ -79,62 +97,76 @@
       height: 100%;
     }
 
-    /* Game headline element positioned across the center */
+    /* Pixel art headlines with heavy black outline dropshadows */
     .game-title {
       color: #ffffff;
-      font-size: 20px;
+      font-size: 14px;
       font-weight: bold;
       text-transform: uppercase;
-      letter-spacing: 1px;
-      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+      letter-spacing: 0px;
+      text-shadow: 3px 3px 0px #000;
       margin: 0;
     }
 
-    /* Universal style rule configuration for the lower metadata buttons using the custom game colors */
+    /* Sharp rectangle coin-op style text badges */
     .game-btn {
-      margin-top: 12px;
+      margin-top: 14px;
       color: white;
-      padding: 6px 14px;
-      border-radius: 8px;
+      padding: 6px 10px;
+      border-radius: 2px;
       font-weight: bold;
-      font-size: 11px;
+      font-size: 8px;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+      letter-spacing: 0px;
+      box-shadow: 2px 2px 0px #000;
+      border: 1px solid rgba(255, 255, 255, 0.3);
     }
 
-    /* Sixth empty box placeholder decoration card element */
+    /* 6th box styled as a blinking arcade coin door slot placeholder */
     .placeholder-card {
-      border: 2px dashed #ccc;
-      border-radius: 24px;
+      border: 3px dashed #39ff14;
+      border-radius: 4px;
       aspect-ratio: 3/2;
       display: flex;
       justify-content: center;
       align-items: center;
-      color: #aaa;
+      color: #39ff14;
       font-weight: bold;
-      font-size: 14px;
-      background-color: transparent;
+      font-size: 10px;
+      text-transform: uppercase;
+      background-color: #120024;
+      box-shadow: 0 0 10px rgba(57, 255, 20, 0.2);
+      animation: blink 1.5s infinite steps(2);
     }
 
-    /* Inline background link assignments referencing your specific GitHub files */
+    @keyframes blink {
+      0% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* Inline background assignments */
     .adventure-bg { background-image: url('adventure.png'); }
     .fighter-bg { background-image: url('fighter-pilot.png'); }
     .neon-bg { background-image: url('neon-snake.png'); }
     .game2048-bg { background-image: url('2048.png'); }
     .asteroid-bg { background-image: url('asteroid-evader.png'); }
+
+    @media (max-width: 500px) {
+      .dashboard-grid { grid-template-columns: 1fr; gap: 16px; }
+      .game-title { font-size: 12px; }
+      .game-btn { font-size: 7px; }
+    }
   </style>
 </head>
 <body>
 
-  <!-- Complete 6-Slot Grid Blueprint matching your reference design image completely with custom colors -->
   <div class="dashboard-grid">
 
     <!-- 1. Adventure Card Element (Red Theme) -->
     <a href="adventure.png" target="_blank" class="game-card adventure-bg">
       <div class="card-content">
         <h2 class="game-title">Adventure</h2>
-        <div class="game-btn" style="background-color: #e51b24;">Adventure - Atari 2600</div>
+        <div class="game-btn" style="background-color: #e51b24;">Atari 2600</div>
       </div>
     </a>
 
@@ -142,7 +174,7 @@
     <a href="fighter-pilot.png" target="_blank" class="game-card fighter-bg">
       <div class="card-content">
         <h2 class="game-title">Fighter Pilot</h2>
-        <div class="game-btn" style="background-color: #0088cc;">Fighter Pilot</div>
+        <div class="game-btn" style="background-color: #0088cc;">Insert Coin</div>
       </div>
     </a>
 
@@ -150,7 +182,7 @@
     <a href="neon-snake.png" target="_blank" class="game-card neon-bg">
       <div class="card-content">
         <h2 class="game-title">Neon Snake</h2>
-        <div class="game-btn" style="background-color: #00ffcc; color: #1a1a1a;">Neon Snake</div>
+        <div class="game-btn" style="background-color: #00ffcc; color: #1a1a1a;">Play Solo</div>
       </div>
     </a>
 
@@ -158,7 +190,7 @@
     <a href="2048.png" target="_blank" class="game-card game2048-bg">
       <div class="card-content">
         <h2 class="game-title">2048</h2>
-        <div class="game-btn" style="background-color: #edc22e;">2048</div>
+        <div class="game-btn" style="background-color: #ffaa00; color: #000;">Hi-Score</div>
       </div>
     </a>
 
@@ -166,13 +198,13 @@
     <a href="asteroid-evader.png" target="_blank" class="game-card asteroid-bg">
       <div class="card-content">
         <h2 class="game-title">Asteroid Evader</h2>
-        <div class="game-btn" style="background-color: #ff007f;">Asteroid Evader</div>
+        <div class="game-btn" style="background-color: #ff007f;">Game Start</div>
       </div>
     </a>
 
-    <!-- 6. Sixth Placeholder Card to complete the layout grid symmetry -->
+    <!-- 6. Sixth Blinking Placeholder Card -->
     <div class="placeholder-card">
-      Coming Soon
+      Insert Coin
     </div>
 
   </div>
