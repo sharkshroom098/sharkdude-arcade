@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neon Snake Cyberpunk</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+<style>
+    body {
+        font-family: 'VT323', monospace;
+        background-color: #050505;
+        overflow: hidden;
+        touch-action: none; /* Prevent pull-to-refresh on mobile */
+    }
+
+    /* CRT Scanline Effect */
+    .scanlines {
+        background: linear-gradient(
+            to bottom,
+            rgba(255,255,255,0),
+            rgba(255,255,255,0) 50%,
+            rgba(0,0,0,0.2) 50%,
+            rgba(0,0,0,0.2)
+        );
+        background-size: 100% 4px;
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        pointer-events: none;
+        z-index: 50;
+    }
+
+    /* Glow Effects */
+    .neon-text {
+        text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px #0ff, 0 0 30px #0ff, 0 0 40px #0ff;
+    }
+    
+    .neon-box {
+        box-shadow: 0 0 10px #0ff, 0 0 20px #0ff, inset 0 0 10px rgba(0, 255, 255, 0.2);
+        border: 2px solid #0ff;
+    }
+
+    .neon-btn {
+        transition: all 0.3s ease;
+        box-shadow: 0 0 5px #0ff;
+    }
+    .neon-btn:hover {
+        background-color: #0ff;
+        color: #000;
+        box-shadow: 0 0 20px #0ff, 0 0 40px #0ff;
+    }
+
+    /* Canvas Container */
+    #game-container {
+        position: relative;
+        box-shadow: 0 0 50px rgba(0, 255, 255, 0.1);
+    }
+
+    canvas {
+        image-rendering: pixelated; /* Retro crisp edges */
+    }
+
+    /* Mobile Controls */
+    .d-pad-btn {
+        background: rgba(0, 255, 255, 0.1);
+        border: 1px solid rgba(0, 255, 255, 0.3);
+        backdrop-filter: blur(4px);
+        active: background: rgba(0, 255, 255, 0.4);
+    }
+    .d-pad-btn:active {
+        background: rgba(0, 255, 255, 0.4);
+        transform: scale(0.95);
+    }
+</style>
+</head>
+<body class="h-screen w-screen flex flex-col items-center justify-center text-cyan-400 selection:bg-cyan-400 selection:text-black">
+
+<!-- CRT Overlay -->
+<div class="scanlines"></div>
+
+<!-- Background Grid Animation (CSS only for simplicity behind canvas) -->
+<div class="fixed inset-0 z-0 opacity-20 pointer-events-none" 
+        style="background-image: linear-gradient(#0ff 1px, transparent 1px), linear-gradient(90deg, #0ff 1px, transparent 1px); background-size: 40px 40px; perspective: 500px; transform: rotateX(60deg) translateY(-100px) scale(2);">
+</div>
+
+<!-- Main UI -->
+<div class="z-10 flex flex-col items-center gap-4 w-full max-w-2xl p-4">
+    
+    <!-- Header -->
+    <div class="w-full flex justify-between items-end border-b-2 border-cyan-800 pb-2 mb-2">
+        <div>
+            <h1 class="text-4xl md:text-6xl font-bold neon-text tracking-widest">NEON SNAKE</h1>
+            <p class="text-sm md:text-lg text-cyan-700 tracking-widest">SYSTEM.READY // V.1.0</p>
+        </div>
+        <div class="text-right">
+            <div class="text-sm text-cyan-600">SCORE</div>
+            <div id="scoreDisplay" class="text-3xl md:text-4xl font-bold neon-text">000</div>
+        </div>
+    </div>
+
+    <!-- Game Area -->
+    <div id="game-container" class="relative neon-box bg-black/80 rounded-lg overflow-hidden">
+        <canvas id="gameCanvas" width="400" height="400" class="block w-full h-auto max-w-[600px] max-h-[60vh]"></canvas>
+        
+        <!-- Start/Game Over Overlay -->
+        <div id="overlay" class="absolute inset-0 flex flex-col items-center justify-center bg-black/90 z-20 transition-opacity duration-300">
+            <h2 id="overlayTitle" class="text-5xl md:text-7xl font-bold mb-4 neon-text text-center">READY?</h2>
+            <p id="overlaySubtitle" class="text-xl md:text-2xl text-cyan-200 mb-8 text-center max-w-xs">Use Arrow Keys or D-Pad to Move</p>
+            <button id="startBtn" class="px-8 py-3 border-2 border-cyan-400 text-cyan-400 text-2xl font-bold rounded neon-btn uppercase tracking-widest">
+                Initialize
+            </button>
+        </div>
+    </div>
+
+    <!-- Mobile Controls (Visible only on small screens via JS logic or CSS media query) -->
+    <div class="grid grid-cols-3 gap-2 w-48 md:hidden mt-4 select-none">
+        <div></div>
+        <button class="d-pad-btn h-14 rounded flex items-center justify-center text-2xl" id="btnUp">▲</button>
+        <div></div>
+        <button class="d-pad-btn h-14 rounded flex items-center justify-center text-2xl" id="btnLeft">◀</button>
+        <button class="d-pad-btn h-14 rounded flex items-center justify-center text-2xl" id="btnDown">▼</button>
+        <button class="d-pad-btn h-14 rounded flex items-center justify-center text-2xl" id="btnRight">▶</button>
+    </div>
+
+    <!-- Footer Stats -->
+    <div class="w-full flex justify-between text-xs md:text-sm text-cyan-800 font-bold mt-2">
+        <span>HIGH SCORE: <span id="highScoreDisplay" class="text-cyan-600">0</span></span>
+        <span>SPEED: <span id="speedDisplay" class="text-cyan-600">1x</span></span>
+    </div>
+</div>
+
+<script>
+    /**
+        * NEON SNAKE LOGIC
+        */
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('scoreDisplay');
+    const highScoreEl = document.getElementById('highScoreDisplay');
+    const speedEl = document.getElementById('speedDisplay');
+    const overlay = document.getElementById('overlay');
+    const overlayTitle = document.getElementById('overlayTitle');
+    const overlaySubtitle = document.getElementById('overlaySubtitle');
+    const startBtn = document.getElementById('startBtn');
+
+    // Game Constants
+    const GRID_SIZE = 20;
+    const TILE_COUNT = canvas.width / GRID_SIZE; // 20x20 grid
+    
+    // Game State
+    let snake = [];
+    let food = { x: 15, y: 15 };
+    let dx = 0;
+    let dy = 0;
+    let score = 0;
+    let highScore = 0;
+    let gameSpeed = 100;
+    let gameLoopId = null;
+    let isGameRunning = false;
+    let particles = []; // For explosion effects
+
+    // Input Buffer (prevents 180 turns in one frame)
+    let nextDx = 0;
+    let nextDy = 0;
+
+    // Colors
+    const COLOR_BG = '#000000';
+    const COLOR_SNAKE_HEAD = '#00ffff';
+    const COLOR_SNAKE_BODY = '#00aaaa';
+    const COLOR_FOOD = '#ff00ff';
+    const COLOR_GRID = '#111111';
+
+    // --- Initialization ---
+
+    function initGame() {
+        // Reset Snake
+        snake = [
+            { x: 10, y: 10 }, // Head
+            { x: 9, y: 10 },
+            { x: 8, y: 10 }
+        ];
+        
+        // Reset Movement
+        dx = 1; // Start moving right
+        dy = 0;
+        nextDx = 1;
+        nextDy = 0;
+        
+        score = 0;
+        gameSpeed = 100;
+        particles = [];
+        
+        updateScore();
+        spawnFood();
+        
+        overlay.classList.add('opacity-0', 'pointer-events-none');
+        
+        if (gameLoopId) clearInterval(gameLoopId);
+        gameLoopId = setInterval(gameLoop, gameSpeed);
+        isGameRunning = true;
+        
+        requestAnimationFrame(renderLoop); // Start visual loop
+    }
+
+    function gameOver() {
+        isGameRunning = false;
+        clearInterval(gameLoopId);
+        
+        if (score > highScore) {
+            highScore = score;
+            highScoreEl.innerText = highScore;
+            overlayTitle.innerText = "NEW HIGH SCORE!";
+        } else {
+            overlayTitle.innerText = "GAME OVER";
+        }
+        
+        overlaySubtitle.innerText = `Final Score: ${score}`;
+        startBtn.innerText = "RESTART SYSTEM";
+        
+        overlay.classList.remove('opacity-0', 'pointer-events-none');
+    }
+
+    // --- Core Logic ---
+
+    function gameLoop() {
+        // Update direction from buffer
+        // Prevent reversing directly
+        if ((nextDx === 1 && dx === -1) || (nextDx === -1 && dx === 1) ||
+            (nextDy === 1 && dy === -1) || (nextDy === -1 && dy === 1)) {
+            // Invalid move, ignore
+        } else {
+            dx = nextDx;
+            dy = nextDy;
+        }
+
+        const head = { x: snake[0].x + dx, y: snake[0].y + dy };
+
+        // Wall Collision
+        if (head.x < 0 || head.x >= TILE_COUNT || head.y < 0 || head.y >= TILE_COUNT) {
+            gameOver();
+            return;
+        }
+
+        // Self Collision
+        for (let i = 0; i < snake.length; i++) {
+            if (head.x === snake[i].x && head.y === snake[i].y) {
+                gameOver();
+                return;
+            }
+        }
+
+        snake.unshift(head); // Add new head
+
+        // Check Food
+        if (head.x === food.x && head.y === food.y) {
+            score += 10;
+            // Speed up slightly every 50 points
+            if (score % 50 === 0 && gameSpeed > 50) {
+                gameSpeed -= 5;
+                clearInterval(gameLoopId);
+                gameLoopId = setInterval(gameLoop, gameSpeed);
+                speedEl.innerText = (1000/gameSpeed).toFixed(1) + 'x';
+            }
+            
+            createParticles(food.x * GRID_SIZE + GRID_SIZE/2, food.y * GRID_SIZE + GRID_SIZE/2, COLOR_FOOD);
+            spawnFood();
+            updateScore();
+        } else {
+            snake.pop(); // Remove tail
+        }
+    }
+
+    function spawnFood() {
+        let valid = false;
+        while (!valid) {
+            food.x = Math.floor(Math.random() * TILE_COUNT);
+            food.y = Math.floor(Math.random() * TILE_COUNT);
+            
+            valid = true;
+            // Check if food spawned on snake
+            for (let part of snake) {
+                if (part.x === food.x && part.y === food.y) {
+                    valid = false;
+                    break;
+                }
+            }
+        }
+    }
+
+    function updateScore() {
+        scoreEl.innerText = score.toString().padStart(3, '0');
+    }
+
+    // --- Rendering ---
+
+    function renderLoop() {
+        if (!isGameRunning) return;
+
+        // Clear Canvas
+        ctx.fillStyle = COLOR_BG;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Draw Grid (Subtle)
+        ctx.strokeStyle = COLOR_GRID;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (let x = 0; x <= canvas.width; x += GRID_SIZE) {
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, canvas.height);
+        }
+        for (let y = 0; y <= canvas.height; y += GRID_SIZE) {
+            ctx.moveTo(0, y);
+            ctx.lineTo(canvas.width, y);
+        }
+        ctx.stroke();
+
+        // Draw Food
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = COLOR_FOOD;
+        ctx.fillStyle = COLOR_FOOD;
+        
+        // Pulsing effect for food
+        const pulse = Math.sin(Date.now() / 100) * 2;
+        ctx.fillRect(
+            food.x * GRID_SIZE + 2 - pulse/2, 
+            food.y * GRID_SIZE + 2 - pulse/2, 
+            GRID_SIZE - 4 + pulse, 
+            GRID_SIZE - 4 + pulse
+        );
+
+        // Draw Snake
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = COLOR_SNAKE_BODY;
+        
+        snake.forEach((part, index) => {
+            if (index === 0) {
+                ctx.fillStyle = COLOR_SNAKE_HEAD;
+                ctx.shadowColor = COLOR_SNAKE_HEAD;
+                ctx.shadowBlur = 20;
+            } else {
+                ctx.fillStyle = COLOR_SNAKE_BODY;
+                ctx.shadowColor = COLOR_SNAKE_BODY;
+                ctx.shadowBlur = 5;
+            }
+            
+            // Draw rounded rect manually or simple rect
+            // Simple rect with slight gap for style
+            ctx.fillRect(
+                part.x * GRID_SIZE + 1, 
+                part.y * GRID_SIZE + 1, 
+                GRID_SIZE - 2, 
+                GRID_SIZE - 2
+            );
+        });
+
+        // Draw Particles
+        updateAndDrawParticles();
+
+        requestAnimationFrame(renderLoop);
+    }
+
+    // --- Particle System ---
+    function createParticles(x, y, color) {
+        for (let i = 0; i < 8; i++) {
+            particles.push({
+                x: x,
+                y: y,
+                vx: (Math.random() - 0.5) * 4,
+                vy: (Math.random() - 0.5) * 4,
+                life: 1.0,
+                color: color
+            });
+        }
+    }
+
+    function updateAndDrawParticles() {
+        for (let i = particles.length - 1; i >= 0; i--) {
+            let p = particles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.life -= 0.05;
+
+            if (p.life <= 0) {
+                particles.splice(i, 1);
+            } else {
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.fillRect(p.x, p.y, 3, 3);
+                ctx.globalAlpha = 1.0;
+            }
+        }
+    }
+
+    // --- Input Handling ---
+
+    function handleInput(key) {
+        if (!isGameRunning) return;
+        
+        switch(key) {
+            case 'ArrowUp':
+            case 'w':
+            case 'W':
+                if (dy === 0) { nextDx = 0; nextDy = -1; }
+                break;
+            case 'ArrowDown':
+            case 's':
+            case 'S':
+                if (dy === 0) { nextDx = 0; nextDy = 1; }
+                break;
+            case 'ArrowLeft':
+            case 'a':
+            case 'A':
+                if (dx === 0) { nextDx = -1; nextDy = 0; }
+                break;
+            case 'ArrowRight':
+            case 'd':
+            case 'D':
+                if (dx === 0) { nextDx = 1; nextDy = 0; }
+                break;
+        }
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].indexOf(e.code) > -1) {
+            e.preventDefault(); // Stop scrolling
+        }
+        handleInput(e.key);
+    });
+
+    // Mobile Controls
+    document.getElementById('btnUp').addEventListener('touchstart', (e) => { e.preventDefault(); handleInput('ArrowUp'); });
+    document.getElementById('btnDown').addEventListener('touchstart', (e) => { e.preventDefault(); handleInput('ArrowDown'); });
+    document.getElementById('btnLeft').addEventListener('touchstart', (e) => { e.preventDefault(); handleInput('ArrowLeft'); });
+    document.getElementById('btnRight').addEventListener('touchstart', (e) => { e.preventDefault(); handleInput('ArrowRight'); });
+    
+    // Mouse clicks for desktop testing of mobile controls
+    document.getElementById('btnUp').addEventListener('mousedown', () => handleInput('ArrowUp'));
+    document.getElementById('btnDown').addEventListener('mousedown', () => handleInput('ArrowDown'));
+    document.getElementById('btnLeft').addEventListener('mousedown', () => handleInput('ArrowLeft'));
+    document.getElementById('btnRight').addEventListener('mousedown', () => handleInput('ArrowRight'));
+
+    // Start Button
+    startBtn.addEventListener('click', initGame);
+
+    // Initial Render (Static)
+    ctx.fillStyle = COLOR_BG;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+</script>
+</body>
+</html>
