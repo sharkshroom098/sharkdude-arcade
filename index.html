@@ -69,10 +69,12 @@
             animation: blink 1.5s infinite;
         }
 
-        /* Dashboard Grid Layout */
+        /* Centered Dashboard Flex Layout */
         .arcade-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center; /* Perfectly centers cards horizontally */
+            align-items: center;
             gap: 40px;
             max-width: 1200px;
             margin: 0 auto;
@@ -85,9 +87,14 @@
             border: 4px solid var(--neon-purple);
             border-radius: 8px;
             padding: 25px;
+            width: 300px; /* Fixed width so items sit cleanly side-by-side */
+            max-width: 100%;
             box-shadow: 0 0 15px rgba(157, 0, 255, 0.4);
             transition: transform 0.3s, border-color 0.3s;
             cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Centers all inner text, buttons, and icons */
         }
 
         .game-card:hover {
@@ -102,6 +109,15 @@
             background: #000;
             border: 2px dashed var(--neon-pink);
             margin-bottom: 20px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .game-info {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
         .game-info h3 {
@@ -110,6 +126,7 @@
             margin-bottom: 10px;
             color: var(--neon-pink);
             letter-spacing: 1px;
+            text-align: center;
         }
 
         .game-info p {
@@ -117,6 +134,7 @@
             line-height: 1.4;
             color: #ccc;
             margin-bottom: 25px;
+            text-align: center;
         }
 
         .play-btn {
@@ -131,6 +149,276 @@
             letter-spacing: 1px;
             box-shadow: 0 0 5px var(--neon-cyan);
             transition: all 0.2s;
+            margin-top: auto; /* Pushes button to bottom if descriptions vary in length */
+        }
+
+        .game-card:hover .play-btn {
+            background: var(--neon-cyan);
+            color: #000;
+            box-shadow: 0 0 15px var(--neon-cyan);
+        }
+
+        /* True Fullscreen Game Canvas Modal Overlay */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #000;
+            z-index: 1000;
+        }
+
+        #game-screen {
+            width: 100%;
+            height: 100%;
+            background: #000;
+            border: none;
+        }
+
+        /* Float Close Trigger Panel */
+        .close-cabinet {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(5, 1, 13, 0.8);
+            border: 2px solid var(--neon-pink);
+            color: var(--neon-pink);
+            font-weight: 700;
+            padding: 10px 15px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            letter-spacing: 1px;
+            z-index: 1001;
+            box-shadow: 0 0 10px var(--neon-pink);
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .close-cabinet:hover {
+            background: var(--neon-pink);
+            color: #000;
+            box-shadow: 0 0 20px var(--neon-pink);
+        }
+
+        /* Animations */
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <!-- CRT Scanline Effect Overlay -->
+    <div class="crt-overlay"></div>
+
+    <header>
+        <h1 class="neon-text">SHARKDUDE'S ARCADE</h1>
+        <p>SELECT A STATION TO BEGIN</p>
+    </header>
+
+    <main class="arcade-container">
+        <!-- Game Card 1: 2048 -->
+        <div class="game-card" data-game-url="2048/">
+            <div class="game-thumbnail">🔢</div>
+            <div class="game-info">
+                <h3>2048</h3>
+                <p>Slide matching grid numbers together to reach the ultimate tile.</p>
+                <button class="play-btn">PLAY GAME</button>
+            </div>
+        </div>
+
+        <!-- Game Card 2: Asteroid Evader -->
+        <div class="game-card" data-game-url="asteroid-evader/">
+            <div class="game-thumbnail">☄️</div>
+            <div class="game-info">
+                <h3>ASTEROID EVADER</h3>
+                <p>Pilot your starship through a dangerous, crushing deep space field.</p>
+                <button class="play-btn">PLAY GAME</button>
+            </div>
+        </div>
+
+        <!-- Game Card 3: Adventure -->
+        <div class="game-card" data-game-url="adventure/">
+            <div class="game-thumbnail">🗺️</div>
+            <div class="game-info">
+                <h3>ADVENTURE</h3>
+                <p>Explore dangerous lands, uncover secrets, and defeat foes.</p>
+                <button class="play-btn">PLAY GAME</button>
+            </div>
+        </div>
+
+        <!-- Game Card 4: Fighter Pilot -->
+        <div class="game-card" data-game-url="fighter-pilot/">
+            <div class="game-thumbnail">✈️</div>
+            <div class="game-info">
+                <h3>FIGHTER PILOT</h3>
+                <p>Engage in fast-paced aerial combat and rules the retro skies.</p>
+                <button class="play-btn">PLAY GAME</button>
+            </div>
+        </div>
+
+        <!-- Game Card 5: Neon Snake -->
+        <div class="game-card" data-game-url="neon-snake/">
+            <div class="game-thumbnail">🐍</div>
+            <div class="game-info">
+                <h3>NEON SNAKE</h3>
+                <p>Grow your retro snake without crashing into walls or yourself.</p>
+                <button class="play-btn">PLAY GAME</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Fullscreen Cabinet Frame Layout -->
+    <div id="arcade-modal" class="modal">
+        <button class="close-cabinet">EXIT GAME</button>
+        <iframe id="game-screen" src="" allowfullscreen></iframe>
+    </div>
+    <style>
+        /* Reset & Core Retro Variables */
+        :root {
+            --neon-pink: #ff007f;
+            --neon-cyan: #00f0ff;
+            --neon-purple: #9d00ff;
+            --bg-dark: #05010d;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: #fff;
+            font-family: 'Orbitron', sans-serif;
+            text-align: center;
+            overflow-x: hidden;
+            background-image: linear-gradient(rgba(157, 0, 255, 0.05) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(157, 0, 255, 0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        /* CRT Screen Effect Overlay */
+        .crt-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 4px, 6px 100%;
+            z-index: 9999;
+            pointer-events: none;
+        }
+
+        /* Header Text Effects */
+        header {
+            padding: 60px 20px 40px 20px;
+        }
+
+        .neon-text {
+            font-size: 3.5rem;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px var(--neon-pink), 0 0 40px var(--neon-pink), 0 0 60px var(--neon-pink);
+            margin-bottom: 15px;
+            letter-spacing: 4px;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: var(--neon-cyan);
+            text-shadow: 0 0 10px var(--neon-cyan);
+            animation: blink 1.5s infinite;
+        }
+
+        /* Centered Dashboard Flex Layout */
+        .arcade-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center; /* Perfectly centers cards horizontally */
+            align-items: center;
+            gap: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Retro Cabinet Game Cards */
+        .game-card {
+            background: #110221;
+            border: 4px solid var(--neon-purple);
+            border-radius: 8px;
+            padding: 25px;
+            width: 300px; /* Fixed width so items sit cleanly side-by-side */
+            max-width: 100%;
+            box-shadow: 0 0 15px rgba(157, 0, 255, 0.4);
+            transition: transform 0.3s, border-color 0.3s;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Centers all inner text, buttons, and icons */
+        }
+
+        .game-card:hover {
+            transform: scale(1.05);
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 25px rgba(0, 240, 255, 0.6);
+        }
+
+        .game-thumbnail {
+            font-size: 4rem;
+            padding: 20px 0;
+            background: #000;
+            border: 2px dashed var(--neon-pink);
+            margin-bottom: 20px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .game-info {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .game-info h3 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--neon-pink);
+            letter-spacing: 1px;
+            text-align: center;
+        }
+
+        .game-info p {
+            font-size: 0.9rem;
+            line-height: 1.4;
+            color: #ccc;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .play-btn {
+            background: transparent;
+            border: 2px solid var(--neon-cyan);
+            color: var(--neon-cyan);
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            padding: 12px 24px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            letter-spacing: 1px;
+            box-shadow: 0 0 5px var(--neon-cyan);
+            transition: all 0.2s;
+            margin-top: auto; /* Pushes button to bottom if descriptions vary in length */
         }
 
         .game-card:hover .play-btn {
