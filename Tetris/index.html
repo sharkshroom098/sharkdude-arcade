@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Arcade Tetris Mobile</title>
+    <style>
+        @import url('https://googleapis.com');
+        :root { --blue: #00f0ff; --magenta: #ff007f; --purple: #9d00ff; }
+        
+        body { 
+            background: #05050a; color: #fff; font-family: 'Press Start 2P', monospace; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            min-height: 100vh; margin: 0; overflow: hidden; touch-action: none;
+            background-image: linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.2) 50%), linear-gradient(90deg, rgba(255,0,0,0.04), rgba(0,255,0,0.01), rgba(0,0,255,0.04)); 
+            background-size: 100% 4px, 6px 100%; -webkit-user-select: none; user-select: none;
+        }
+        
+        .cabinet { 
+            border: 3px solid var(--magenta); box-shadow: 0 0 15px var(--magenta); 
+            padding: 10px; background: #000; border-radius: 8px; position: relative; 
+            display: flex; flex-direction: column; align-items: center; max-width: 95vw;
+        }
+        .header { text-align: center; margin-bottom: 10px; color: var(--blue); text-shadow: 0 0 8px var(--blue); font-size: 18px; }
+        .game-container { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        
+        #game-board { border: 3px solid var(--blue); box-shadow: 0 0 10px var(--blue); background: #0a0a14; max-width: 85vw; height: auto; aspect-ratio: 1 / 2; }
+        
+        .sidebar { display: flex; flex-direction: row; gap: 8px; width: 100%; justify-content: center; }
+        .box { border: 2px solid var(--purple); box-shadow: 0 0 6px var(--purple); padding: 8px; background: #020205; text-align: center; font-size: 9px; flex: 1; min-width: 100px; }
+        .box-title { color: var(--magenta); margin-bottom: 4px; font-size: 7px; }
+        .leaderboard-list { list-style: none; padding: 0; margin: 0; text-align: left; font-size: 8px; line-height: 1.5; }
+        
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; border-radius: 5px; }
+        .hidden { display: none !important; }
+        .btn { font-family: 'Press Start 2P'; background: transparent; color: var(--blue); border: 2px solid var(--blue); padding: 12px 24px; cursor: pointer; box-shadow: 0 0 10px var(--blue); margin-top: 15px; font-size: 12px; }
+        
+        .keyboard { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-top: 10px; width: 90%; }
+        .key { background: #1c1c24; border: 1px solid #333; padding: 10px 0; text-align: center; cursor: pointer; font-size: 11px; border-radius: 3px; color: #fff; }
+        .key:active, .key.selected { background: var(--magenta); box-shadow: 0 0 8px var(--magenta); color: #fff; }
+        .key.wide { grid-column: span 2; }
+        .initials-display { font-size: 22px; letter-spacing: 8px; margin: 10px 0; color: var(--blue); text-shadow: 0 0 5px var(--blue); }
+        
+        .controls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; max-width: 280px; margin-top: 15px; }
+        .ctrl-btn { background: #111; border: 2px solid var(--purple); color: var(--blue); box-shadow: 0 0 5px var(--purple); border-radius: 50%; width: 55px; height: 55px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; margin: 0 auto; cursor: pointer; touch-action: manipulation; }
+        .ctrl-btn:active { background: var(--blue); color: #000; box-shadow: 0 0 10px var(--blue); border-color: #fff; }
+    </style>
+</head>
+<body>
+    <div class="cabinet">
+        <div class="header">TETRIS</div>
+        <div class="game-container">
+            <div class="sidebar">
+                <div class="box"><div class="box-title">SCORE</div><div id="score">000000</div></div>
+                <div class="box"><div class="box-title">TOP 3 RANK</div><ul id="leaderboard" class="leaderboard-list"></ul></div>
+            </div>
+            <canvas id="game-board" width="240" height="480"></canvas>
+        </div>
+        
+        <div class="controls">
+            <div></div><div class="ctrl-btn" id="btn-up">↻</div><div></div>
+            <div class="ctrl-btn" id="btn-left">←</div><div class="ctrl-btn" id="btn-down">↓</div><div class="ctrl-btn" id="btn-right">→</div>
+        </div>
+
+        <div id="start-screen" class="overlay">
+            <h2 style="color:var(--magenta); text-shadow:0 0 10px var(--magenta); font-size:16px;">INSERT COIN</h2>
+            <button class="btn" onclick="startGame()">START</button>
+        </div>
+        
+        <div id="game-over-screen" class="overlay hidden">
+            <h2 style="color:red; text-shadow:0 0 10px red; margin-bottom:5px; font-size:16px;">GAME OVER</h2>
+            <div id="new-high-score-msg" class="hidden" style="color:gold; font-size:9px; text-align:center; margin-bottom:10px">NEW HIGH SCORE!<br>ENTER INITIALS</div>
+            <div id="initials-container" class="hidden" style="display:flex; flex-direction:column; align-items:center; width:100%;">
+                <div id="initials-display" class="initials-display">___</div>
+                <div id="arcade-keyboard" class="keyboard"></div>
+            </div>
+            <button id="restart-btn" class="btn" onclick="resetToMenu()">MENU</button>
+        </div>
+    </div>
+<script>
+    const canvas = document.getElementById('game-board'), ctx = canvas.getContext('2d');
+    const ROW = 20, COL = 10, SQ = 24, VACANT = '#0a0a14';
+    const COLORS = [null, '#00f0ff', '#ff007f', '#9d00ff', '#ffaa00', '#0033ff', '#00ff66', '#ff0033'];
+    
+    // Hardcoded matrix values without bracket shorthand styles to prevent markdown strip bugs
+    const SHAPES = [
+        [],
+        [[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]], // I
+        [[2,2],[2,2]],                             // O
+        [[0,3,0],[3,3,3],[0,0,0]],                 // T
+        [[0,0,4],[4,4,4],[0,0,0]],                 // L
+        [[5,0,0],[5,5,5],[0,0,0]],                 // J
+        [[6,6,0],[0,6,6],[0,0,0]],                 // Z
+        [[0,7,7],[7,7,0],[0,0,0]]                  // S
+    ];
+    
+    let board = [], score = 0, gameInterval, gameOver = false, activePiece;
+    
+    let highScores = JSON.parse(localStorage.getItem('tetris_high_scores')) || [
+        {name: '___', score: 0000},
+        {name: '___', score: 0000},
+        {name: '___', score: 0000}
+    ];
+    
+    let currentInitials = [], keyboardIndex = 0;
+    const keysList = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ⌫↵'.split('');
+
+    function initBoard() { for(let r=0; r<ROW; r++) board[r] = Array(COL).fill(0); }
+    function drawSquare(x, y, id) { ctx.fillStyle = id === 0 ? VACANT : COLORS[id]; ctx.fillRect(x*SQ, y*SQ, SQ, SQ); ctx.strokeStyle = '#05050a'; ctx.strokeRect(x*SQ, y*SQ, SQ, SQ); }
+    function drawBoard() { for(let r=0; r<ROW; r++) for(let c=0; c<COL; c++) drawSquare(c, r, board[r][c]); }
+
+    class Piece {
+        constructor(shape, id) { this.shape = shape; this.id = id; this.x = Math.floor((COL-shape.length)/2); this.y = -2; }
+        update(clear) { for(let r=0; r<this.shape.length; r++) for(let c=0; c<this.shape[r].length; c++) if(this.shape[r][c] && this.y+r>=0) drawSquare(this.x+c, this.y+r, clear ? 0 : this.id); }
+        moveDown() { if(!this.collision(0,1,this.shape)) { this.update(true); this.y++; this.update(); } else { this.lock(); generateNextPiece(); } }
+        move(dir) { if(!this.collision(dir,0,this.shape)) { this.update(true); this.x+=dir; this.update(); } }
+        rotate() {
+            let next = Array(this.shape.length).fill().map(() => Array(this.shape.length));
+            for(let r=0; r<this.shape.length; r++) for(let c=0; c<this.shape[r].length; c++) next[c][this.shape.length-1-r] = this.shape[r][c];
+            if(!this.collision(0,0,next)) { this.update(true); this.shape = next; this.update(); }
+        }
+        collision(xO, yO, matrix) {
+            for(let r=0; r<matrix.length; r++) for(let c=0; c<matrix[r].length; c++) {
+                if(!matrix[r][c]) continue;
+                let nX = this.x+c+xO, nY = this.y+r+yO;
+                if(nX<0 || nX>=COL || nY>=ROW) return true;
+                if(nY>=0 && board[nY][nX]!==0) return true;
+            }
+            return false;
+        }
+        lock() {
+            for(let r=0; r<this.shape.length; r++) for(let c=0; c<this.shape[r].length; c++) {
+                if(!this.shape[r][c]) continue;
+                if(this.y+r<0) { triggerGameOver(); return; }
+                board[this.y+r][this.x+c] = this.id;
+            }
+            clearLines(); drawBoard();
+        }
+    }
+
+    function clearLines() {
+        let lines = 0;
+        for(let r=ROW-1; r>=0; r--) if(board[r].every(v => v!==0)) { board.splice(r,1); board.unshift(Array(COL).fill(0)); lines++; r++; }
+        if(lines > 0) {
+            // Extracted using switch cases to absolutely ensure bracket stripping errors can't happen
+            let pts = 0;
+            if (lines === 1) pts = 100;
+            if (lines === 2) pts = 300;
+            if (lines === 3) pts = 500;
+            if (lines === 4) pts = 800;
+            score += pts;
+            document.getElementById('score').innerText = String(score).padStart(6,'0');
+        }
+    }
+
+    function generateNextPiece() { const id = Math.floor(Math.random()*7)+1; activePiece = new Piece(SHAPES[id], id); activePiece.update(); }
+    function resetDropInterval() { clearInterval(gameInterval); gameInterval = setInterval(() => { if(!gameOver) activePiece.moveDown(); }, 500); }
+
+    document.addEventListener('keydown', e => {
+        if(gameOver) { handleKeyboardNav(e); return; }
+        if(!activePiece) return;
+        if(e.key === 'ArrowLeft') activePiece.move(-1);
+        if(e.key === 'ArrowRight') activePiece.move(1);
+        if(e.key === 'ArrowUp') activePiece.rotate();
+        if(e.key === 'ArrowDown') activePiece.moveDown();
+    });
+
+    const setupMobileButton = (id, action) => {
+        const btn = document.getElementById(id);
+        btn.addEventListener('touchstart', (e) => { e.preventDefault(); if(!gameOver && activePiece) action(); });
+    };
+    setupMobileButton('btn-left', () => activePiece.move(-1));
+    setupMobileButton('btn-right', () => activePiece.move(1));
+    setupMobileButton('btn-up', () => activePiece.rotate());
+    setupMobileButton('btn-down', () => activePiece.moveDown());
+
+    function updateLeaderboardUI() { 
+        document.getElementById('leaderboard').innerHTML = highScores.map((e,i)=>`<li>${i+1}.${e.name}-${String(e.score).padStart(5,'0')}</li>`).join(''); 
+    }
+    
+    function triggerGameOver() {
+        gameOver = true; clearInterval(gameInterval);
+        document.getElementById('game-over-screen').classList.remove('hidden');
+        if(highScores.length < 3 || score > highScores[highScores.length-1].score) {
+            ['new-high-score-msg','initials-container'].forEach(id => document.getElementById(id).classList.remove('hidden'));
+            document.getElementById('restart-btn').classList.add('hidden');
+            currentInitials = []; keyboardIndex = 0; renderKeyboard(); updateInitialsDisplay();
+        } else {
+            ['new-high-score-msg','initials-container'].forEach(id => document.getElementById(id).classList.add('hidden'));
+            document.getElementById('restart-btn').classList.remove('hidden');
+        }
+    }
+
+    function renderKeyboard() {
+        document.getElementById('arcade-keyboard').innerHTML = keysList.map((k,i) => {
+            let cls = `key ${k==='⌫'||k==='↵'?'wide':''} ${i===keyboardIndex?'selected':''}`;
+            return `<div class="${cls}" onclick="selectKeyByIndex(${i})">${k==='↵'?'ENT':k}</div>`;
+        }).join('');
+    }
+    function selectKeyByIndex(i) { keyboardIndex = i; renderKeyboard(); handleKeySubmit(keysList[i]); }
+
+    function handleKeyboardNav(e) {
+        const total = keysList.length, row = 7;
+        if(e.key === 'ArrowRight') keyboardIndex = (keyboardIndex+1)%total;
+        if(e.key === 'ArrowLeft') keyboardIndex = (keyboardIndex-1+total)%total;
+        if(e.key === 'ArrowDown') keyboardIndex = Math.min(total-1, keyboardIndex+row);
+        if(e.key === 'ArrowUp') keyboardIndex = Math.max(0, keyboardIndex-row);
+        if(['ArrowRight','ArrowLeft','ArrowDown','ArrowUp'].includes(e.key)) { e.preventDefault(); renderKeyboard(); }
+        if(e.key === 'Enter') handleKeySubmit(keysList[keyboardIndex]);
+    }
+
+    function handleKeySubmit(char) {
+        if(char === '⌫') currentInitials.pop();
+        else if(char === '↵') { if(currentInitials.length>0) saveScore(); }
+        else if(currentInitials.length < 3) currentInitials.push(char);
+        updateInitialsDisplay();
+    }
+    function updateInitialsDisplay() { document.getElementById('initials-display').innerText = currentInitials.join('').padEnd(3,'_'); }
+
+    function saveScore() {
+        highScores.push({name: currentInitials.join('').padEnd(3,'A'), score: score});
+        highScores.sort((a,b)=>b.score-a.score); highScores = highScores.slice(0,3);
+        localStorage.setItem('tetris_high_scores', JSON.stringify(highScores));
+        updateLeaderboardUI(); resetToMenu();
+    }
+
+    function startGame() {
+        document.getElementById('start-screen').classList.add('hidden');
+        document.getElementById('game-over-screen').classList.add('hidden');
+        gameOver = false; score = 0;
+        document.getElementById('score').innerText = '000000';
+        initBoard(); generateNextPiece(); drawBoard(); resetDropInterval();
+    }
+    function resetToMenu() { document.getElementById('game-over-screen').classList.add('hidden'); document.getElementById('start-screen').classList.remove('hidden'); initBoard(); drawBoard(); }
+
+    initBoard(); drawBoard(); updateLeaderboardUI();
+</script>
+</body>
+</html>
