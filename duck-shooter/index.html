@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Retro Duck Shooter</title>
+    <style>
+        /* 80s Arcade Aesthetic */
+        @import url('https://googleapis.com');
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        body {
+            background-color: #050510;
+            font-family: 'Press Start 2P', monospace;
+            color: #39ff14;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Responsive Game Container */
+        #game-container {
+            position: relative;
+            width: 100vw;
+            max-width: 800px;
+            height: 60vh;
+            max-height: 500px;
+            background: linear-gradient(to bottom, #140526 0%, #000044 70%, #ff007f 100%);
+            border: 4px solid #39ff14;
+            box-shadow: 0 0 20px #39ff14, inset 0 0 20px rgba(255, 0, 127, 0.5);
+            overflow: hidden;
+            cursor: crosshair;
+        }
+
+        /* Scanline Overlay for CRT effect */
+        #game-container::after {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 10;
+            background-size: 100% 4px, 6px 100%;
+            pointer-events: none;
+        }
+
+        /* UI HUD Elements */
+        #hud {
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            justify-content: space-between;
+            padding: 15px;
+            background-color: #000;
+            border: 4px solid #ff007f;
+            border-bottom: none;
+            font-size: 12px;
+            text-shadow: 0 0 5px #ff007f;
+        }
+
+        @media (max-width: 600px) {
+            #hud { font-size: 9px; padding: 10px; }
+            #game-container { height: 50vh; }
+        }
+
+        /* Retro Duck (CSS Generated Pixel Art) */
+        .duck {
+            position: absolute;
+            width: 48px;
+            height: 40px;
+            background-color: #ffcc00;
+            border-radius: 50% 50% 40% 40%;
+            box-shadow: inset -4px -4px 0 #cc9900;
+            transition: transform 0.1s linear;
+            z-index: 5;
+        }
+
+        /* Duck Details */
+        .duck::before {
+            content: '';
+            position: absolute;
+            top: 8px;
+            right: -6px;
+            width: 14px;
+            height: 10px;
+            background-color: #ff6600;
+            border-radius: 0 50% 50% 0;
+        }
+
+        .duck::after {
+            content: '';
+            position: absolute;
+            top: 6px;
+            left: 24px;
+            width: 6px;
+            height: 6px;
+            background-color: #000;
+            border-radius: 50%;
+            box-shadow: 1px 1px 0 #fff;
+        }
+
+        .duck.facing-left {
+            transform: scaleX(-1);
+        }
+
+        .duck.dead {
+            background-color: #ff007f !important;
+            transform: scaleY(-1) translateY(-20px) !important;
+            box-shadow: none;
+            pointer-events: none;
+        }
+
+        /* Screen States */
+        .screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(5, 5, 16, 0.95);
+            z-index: 20;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .hidden { display: none !important; }
+
+        h1 {
+            color: #00ffff;
+            font-size: 24px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px #00ffff;
+            line-height: 1.5;
+        }
+
+        .btn {
+            background: transparent;
+            border: 4px solid #39ff14;
+            color: #39ff14;
+            padding: 15px 30px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 16px;
+            cursor: pointer;
+            box-shadow: 0 0 10px #39ff14;
+            margin-top: 15px;
+        }
+
+        .btn:active {
+            background: #39ff14;
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Heads Up Display -->
+    <div id="hud">
+        <div>SCORE:<span id="score-val">00000</span></div>
+        <div>HI-SCORE:<span id="hi-score-val">00000</span></div>
+        <div>TIME:<span id="timer-val">30</span>s</div>
+    </div>
+
+    <!-- Main Game Window -->
+    <div id="game-container">
+        
+        <!-- Start Screen -->
+        <div id="start-screen" class="screen">
+            <h1>DUCK SHOOTER<br><span style="color:#ff007f;">80</span></h1>
+            <button class="btn" id="start-btn">START GAME</button>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="game-over-screen" class="screen hidden">
+            <h1>GAME OVER</h1>
+            <p style="margin-bottom: 15px; color:#ff007f;">SCORE: <span id="final-score">0</span></p>
+            <p style="margin-bottom: 25px; color:#00ffff;">BEST: <span id="game-over-hi-score">0</span></p>
+            <button class="btn" id="restart-btn">PLAY AGAIN</button>
+        </div>
+
+    </div>
+    <script>
+        // Web Audio Setup for Retro Sound FX
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (type === 'shoot') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+            } else if (type === 'hit') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(600, audioCtx.currentTime + 0.15);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+            }
+        }
+
+        // Game Configuration
+        const container = document.getElementById('game-container');
+        const scoreVal = document.getElementById('score-val');
+        const hiScoreVal = document.getElementById('hi-score-val');
+        const timerVal = document.getElementById('timer-val');
+        const startScreen = document.getElementById('start-screen');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const finalScore = document.getElementById('final-score');
+        const gameOverHiScore = document.getElementById('game-over-hi-score');
+
+        let score = 0;
+        let highScore = parseInt(localStorage.getItem('duckShooterHighScore')) || 0;
+        let timeLeft = 30;
+        let gameActive = false;
+        let activeDucks = [];
+        let spawnInterval;
+        let countdownInterval;
+
+        // Configuration adjustment per device type
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        const maxDucksOnScreen = isMobile ? 3 : 5; 
+
+        // Initialize high score display on load
+        hiScoreVal.textContent = String(highScore).padStart(5, '0');
+
+        // Initialization
+        document.getElementById('start-btn').addEventListener('click', startGame);
+        document.getElementById('restart-btn').addEventListener('click', startGame);
+
+        // Core Game Input (Works with Touch and Clicks seamlessly)
+        container.addEventListener('pointerdown', (e) => {
+            if (!gameActive) return;
+            if (e.target.classList.contains('screen') || e.target.tagName === 'BUTTON') return;
+
+            // Retro shot sound effect (Flash element completely removed)
+            playSound('shoot');
+
+            // Target hit check
+            if (e.target.classList.contains('duck') && !e.target.classList.contains('dead')) {
+                hitDuck(e.target);
+            }
+        });
+
+        function startGame() {
+            score = 0;
+            timeLeft = 30;
+            activeDucks = [];
+            scoreVal.textContent = "00000";
+            timerVal.textContent = "30";
+            
+            // Sync current high score from storage
+            highScore = parseInt(localStorage.getItem('duckShooterHighScore')) || 0;
+            hiScoreVal.textContent = String(highScore).padStart(5, '0');
+            
+            startScreen.classList.add('hidden');
+            gameOverScreen.classList.add('hidden');
+            gameActive = true;
+
+            // Clear any lingering ducks
+            document.querySelectorAll('.duck').forEach(d => d.remove());
+
+            // Core Gameplay loop tickers
+            spawnInterval = setInterval(manageDuckSpawning, 600); 
+            countdownInterval = setInterval(updateTimer, 1000);
+            requestAnimationFrame(updateGamePhysics);
+        }
+
+        function updateTimer() {
+            if (!gameActive) return;
+            
+            timeLeft--;
+            timerVal.textContent = timeLeft;
+
+            if (timeLeft <= 0) {
+                endGame();
+            }
+        }
+
+        function manageDuckSpawning() {
+            if (!gameActive) return;
+            
+            if (activeDucks.length < maxDucksOnScreen) {
+                spawnDuck();
+            }
+        }
+
+        function spawnDuck() {
+            const duck = document.createElement('div');
+            duck.classList.add('duck');
+
+            const containerWidth = container.clientWidth;
+            const containerHeight = container.clientHeight;
+            
+            const startLeft = Math.random() > 0.5;
+            let posX = startLeft ? -50 : containerWidth + 50;
+            let posY = Math.random() * (containerHeight - 100) + 40; 
+            
+            let speedX = (Math.random() * 3 + 2) * (startLeft ? 1 : -1);
+
+            duck.style.left = posX + 'px';
+            duck.style.top = posY + 'px';
+            if (!startLeft) duck.classList.add('facing-left');
+
+            container.appendChild(duck);
+
+            activeDucks.push({
+                element: duck,
+                x: posX,
+                y: posY,
+                speedX: speedX,
+                width: 48
+            });
+        }
+
+        function updateGamePhysics() {
+            if (!gameActive) return;
+
+            const containerWidth = container.clientWidth;
+
+            for (let i = activeDucks.length - 1; i >= 0; i--) {
+                let d = activeDucks[i];
+
+                if (d.element.classList.contains('dead')) {
+                    d.y += 8;
+                    d.element.style.top = d.y + 'px';
+                    
+                    if (d.y > container.clientHeight) {
+                        d.element.remove();
+                        activeDucks.splice(i, 1);
+                    }
+                    continue;
+                }
+
+                d.x += d.speedX;
+                d.element.style.left = d.x + 'px';
+
+                if (d.speedX > 0 && d.x > containerWidth - d.width) {
+                    d.speedX *= -1;
+                    d.element.classList.add('facing-left');
+                } else if (d.speedX < 0 && d.x < 0) {
+                    d.speedX *= -1;
+                    d.element.classList.remove('facing-left');
+                }
+            }
+
+            requestAnimationFrame(updateGamePhysics);
+        }
+
+        function hitDuck(duckEl) {
+            playSound('hit');
+            duckEl.classList.add('dead');
+            
+            score += 100;
+            scoreVal.textContent = String(score).padStart(5, '0'); 
+
+            // Proactively update High Score indicator if the record breaks during play
+            if (score > highScore) {
+                highScore = score;
+                hiScoreVal.textContent = String(highScore).padStart(5, '0');
+            }
+        }
+
+        function endGame() {
+            gameActive = false;
+            clearInterval(spawnInterval);
+            clearInterval(countdownInterval);
+            
+            // Finalize High Score tracking inside device memory
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('duckShooterHighScore', highScore);
+            } else {
+                localStorage.setItem('duckShooterHighScore', highScore);
+            }
+
+            finalScore.textContent = String(score).padStart(5, '0');
+            gameOverHiScore.textContent = String(highScore).padStart(5, '0');
+            gameOverScreen.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
