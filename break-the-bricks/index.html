@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta
+			name="viewport"
+			content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"
+		/>
+		<title>Break The Bricks</title>
+		<style>
+			@import url('https://googleapis.com');
+			*{box-sizing:border-box;margin:0;padding:0;user-select:none;-webkit-user-select:none;touch-action:none;}
+			body{background:#000000;font-family:'Press Start 2P',monospace;color:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh;overflow:hidden;}
+			#game-container{position:relative;width:100%;max-width:480px;aspect-ratio:3/4;border:4px solid #ff007f;box-shadow:0 0 20px #ff007f,inset 0 0 20px #ff007f;background:#0d0d26 linear-gradient(rgba(18,16,16,0)50%,rgba(0,0,0,.25)50%),linear-gradient(90deg,rgba(255,0,0,.06),rgba(0,255,0,.02),rgba(0,0,255,.06));background-size:100% 4px,6px 100%;}
+			canvas{width:100%;height:100%;display:block;}
+			.ui-layer{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(5,5,16,.85);z-index:10;text-align:center;padding:20px;}
+			h1{font-family:'Orbitron',sans-serif;font-size:1.8rem;color:#00ffff;text-shadow:0 0 10px #00ffff,0 0 20px #00ffff;margin-bottom:30px;letter-spacing:1px;line-height:1.4;}
+			.btn{font-family:'Press Start 2P',monospace;background:#ff007f;color:#fff;border:none;padding:15px 30px;font-size:1rem;cursor:pointer;box-shadow:0 0 15px #ff007f;text-shadow:1px 1px 0 #000;}
+			.btn:active{transform:scale(.95);box-shadow:0 0 5px #ff007f;}
+			#hud{position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;font-size:.65rem;color:#00ffff;text-shadow:0 0 5px #00ffff;pointer-events:none;z-index:5;}
+			.hidden{display:none!important;}
+		</style>
+	</head>
+	<body>
+		<div id="game-container">
+			<div id="hud">
+				<span id="score-display">SCORE: 0000</span
+				><span id="lives-display">LIVES: ♥♥♥</span>
+			</div>
+			<div id="start-screen" class="ui-layer">
+				<h1>BREAK THE BRICKS</h1>
+				<p
+					style="font-size:.55rem;line-height:1.8;color:#ff007f;margin-bottom:40px;"
+				>
+					DRAG OR USE ARROWS<br />TO MOVE PLATFORM
+				</p>
+				<button class="btn" id="start-btn">START</button>
+			</div>
+			<div id="game-over-screen" class="ui-layer hidden">
+				<h1 id="game-title">GAME OVER</h1>
+				<p
+					id="final-score"
+					style="font-size:.7rem;margin-bottom:30px;color:#00ffff;"
+				></p>
+				<button class="btn" id="restart-btn">PLAY AGAIN</button>
+			</div>
+			<canvas id="gameCanvas" width="600" height="800"></canvas>
+		</div>
+		<script>
+			const canvas=document.getElementById('gameCanvas'),ctx=canvas.getContext('2d'),startScreen=document.getElementById('start-screen'),gameOverScreen=document.getElementById('game-over-screen'),gameTitle=document.getElementById('game-title'),finalScoreDisplay=document.getElementById('final-score'),scoreDisplay=document.getElementById('score-display'),livesDisplay=document.getElementById('lives-display');
+			let audioCtx,score=0,lives=3,gameRunning=false,bricks=[],highScore=localStorage.getItem('brkBricksHighScore')||0;
+			const paddle={width:100,height:15,x:250,y:760,speed:8,isMovingLeft:false,isMovingRight:false},ball={x:300,y:600,radius:8,dx:4,dy:-4,baseSpeed:5.5,speedIncrement:.25},brickRows=6,brickCols=8,brickWidth=64,brickHeight=20,brickPadding=6,brickOffsetTop=60,brickOffsetLeft=24,colors=['#ff0000','#ff007f','#00ff00','#00ffff','#aa00ff','#0000ff'];
+			function initAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();}
+			function playSound(f,t,d){if(!audioCtx)return;const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=t;o.frequency.setValueAtTime(f,audioCtx.currentTime);g.gain.setValueAtTime(.15,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+d);o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+d);}
+			function initBricks(){for(let r=0;r<brickRows;r++){bricks[r]=[];for(let c=0;c<brickCols;c++){let rc=colors[Math.floor(Math.random()*colors.length)];bricks[r][c]={x:0,y:0,status:1,color:rc};}}}
+			document.getElementById('start-btn').addEventListener('click',startGame);document.getElementById('restart-btn').addEventListener('click',startGame);
+			window.addEventListener('keydown',e=>{if(e.key==='ArrowLeft'||e.key==='a')paddle.isMovingLeft=true;if(e.key==='ArrowRight'||e.key==='d')paddle.isMovingRight=true;});
+			window.addEventListener('keyup',e=>{if(e.key==='ArrowLeft'||e.key==='a')paddle.isMovingLeft=false;if(e.key==='ArrowRight'||e.key==='d')paddle.isMovingRight=false;});
+			function handlePointer(e){if(!gameRunning)return;const r=canvas.getBoundingClientRect(),cx=e.touches?e.touches[0].clientX:e.clientX;paddle.x=(cx-r.left)*(canvas.width/r.width)-paddle.width/2;if(paddle.x<0)paddle.x=0;if(paddle.x+paddle.width>canvas.width)paddle.x=canvas.width-paddle.width;}
+			window.addEventListener('mousemove',handlePointer);window.addEventListener('touchstart',handlePointer,{passive:false});window.addEventListener('touchmove',handlePointer,{passive:false});
+			function startGame(){initAudio();if(audioCtx.state==='suspended')audioCtx.resume();score=0;lives=3;ball.baseSpeed=5.5;resetBallAndPaddle();initBricks();startScreen.classList.add('hidden');gameOverScreen.classList.add('hidden');gameRunning=true;updateHUD();playSound(220,'square',.1);setTimeout(()=>playSound(440,'square',.15),100);requestAnimationFrame(gameLoop);}
+			function resetBallAndPaddle(){paddle.x=(canvas.width-paddle.width)/2;ball.x=canvas.width/2;ball.y=canvas.height-150;ball.dx=(Math.random()>.5?1:-1)*ball.baseSpeed*.7;ball.dy=-ball.baseSpeed;}
+			function updateHUD(){scoreDisplay.innerHTML=`SCORE: ${String(score).padStart(4,'0')} <span style="margin-left:15px;color:#ff007f">HI: ${String(highScore).padStart(4,'0')}</span>`;livesDisplay.textContent=`LIVES: ${'♥'.repeat(Math.max(0,lives))}`;}
+			function update(){if(paddle.isMovingLeft&&paddle.x>0)paddle.x-=paddle.speed;if(paddle.isMovingRight&&paddle.x<canvas.width-paddle.width)paddle.x+=paddle.speed;ball.x+=ball.dx;ball.y+=ball.dy;if(ball.x-ball.radius<0||ball.x+ball.radius>canvas.width){ball.dx=-ball.dx;playSound(300,'square',.05);}if(ball.y-ball.radius<0){ball.dy=-ball.dy;playSound(300,'square',.05);}if(ball.y+ball.radius>=paddle.y&&ball.y-ball.radius<=paddle.y+paddle.height&&ball.x>=paddle.x&&ball.x<=paddle.x+paddle.width){let hp=(ball.x-(paddle.x+paddle.width/2))/(paddle.width/2),cs=Math.sqrt(ball.dx*ball.dx+ball.dy*ball.dy);ball.dx=hp*(cs*.85);ball.dy=-Math.sqrt(cs*cs-ball.dx*ball.dx);ball.y=paddle.y-ball.radius;playSound(180,'triangle',.08);}let clear=true;for(let r=0;r<brickRows;r++){for(let c=0;c<brickCols;c++){let b=bricks[r][c];if(b.status===1){clear=false;if(ball.x+ball.radius>b.x&&ball.x-ball.radius<b.x+brickWidth&&ball.y+ball.radius>b.y&&ball.y-ball.radius<b.y+brickHeight){b.status=0;ball.dy=-ball.dy;score+=(brickRows-r)*10;ball.baseSpeed+=ball.speedIncrement;if(score>highScore){highScore=score;localStorage.setItem('brkBricksHighScore',highScore);}updateHUD();playSound(600-(r*40),'square',.06);break;}}}}if(clear){initBricks();resetBallAndPaddle();ball.baseSpeed+=1.5;playSound(880,'sine',.3);}if(ball.y-ball.radius>canvas.height){lives--;updateHUD();playSound(120,'sawtooth',.3);if(lives<=0){endGame(false);}else{resetBallAndPaddle();}}}
+			function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);for(let r=0;r<brickRows;r++){for(let c=0;c<brickCols;c++){if(bricks[r][c].status===1){let bx=(c*(brickWidth+brickPadding))+brickOffsetLeft,by=(r*(brickHeight+brickPadding))+brickOffsetTop;bricks[r][c].x=bx;bricks[r][c].y=by;ctx.fillStyle=bricks[r][c].color;ctx.shadowBlur=10;ctx.shadowColor=bricks[r][c].color;ctx.fillRect(bx,by,brickWidth,brickHeight);ctx.fillStyle='rgba(255,255,255,0.4)';ctx.fillRect(bx,by,brickWidth,3);}}}ctx.fillStyle='#00ffff';ctx.shadowBlur=15;ctx.shadowColor='#00ffff';ctx.fillRect(paddle.x,paddle.y,paddle.width,paddle.height);ctx.fillStyle='#ffffff';ctx.fillRect(paddle.x+5,paddle.y+4,paddle.width-10,3);ctx.fillStyle='#ff007f';ctx.shadowBlur=12;ctx.shadowColor='#ff007f';ctx.fillRect(ball.x-ball.radius,ball.y-ball.radius,ball.radius*2,ball.radius*2);ctx.shadowBlur=0;}
+			function endGame(v){gameRunning=false;gameOverScreen.classList.remove('hidden');let hTxt=score>=highScore&&score>0?`<br><span style="color:#ff007f;font-size:0.55rem">NEW HIGH SCORE!</span>`:'';finalScoreDisplay.innerHTML=`SCORE: ${String(score).padStart(4,'0')} &nbsp; BEST: ${String(highScore).padStart(4,'0')}${hTxt}`;gameTitle.textContent=v?"YOU WIN!":"GAME OVER";gameTitle.style.color=v?"#00ffff":"#ff007f";gameTitle.style.textShadow=`0 0 10px ${v?"#00ffff":"#ff007f"}`;}
+			function gameLoop(){if(!gameRunning)return;update();draw();requestAnimationFrame(gameLoop);}
+		</script>
+	</body>
+</html>
